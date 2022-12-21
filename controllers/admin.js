@@ -9,26 +9,40 @@ exports.getAddProduct = (request, response, next) => {
   });
 };
 
-exports.postAddProduct = (request, response, next) => {
+exports.postAddProduct = async (request, response, next) => {
   const title = request.body.title;
   const description = request.body.description;
   const imageUrl = request.body.imageUrl;
   const price = request.body.price;
-  const product = new Product(null, title, description, imageUrl, price);
-  product.save();
-  response.redirect("/");
+
+  try {
+    const result = await Product.create({
+      title: title,
+      description: description,
+      price: price,
+      imageUrl: imageUrl,
+    });
+    if (result) {
+      response.redirect("/admin/products");
+    }
+  } catch (error) {
+    console.log(error);
+  }
 };
-exports.getProducts = (request, response, next) => {
-  Product.fetchAll((products) => {
+exports.getProducts = async (request, response, next) => {
+  try {
+    const products = await Product.findAll();
     response.render("admin/products", {
       prods: products,
       docTitle: "Products",
       path: "/admin/products",
     });
-  });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-exports.getEditProduct = (request, response, next) => {
+exports.getEditProduct = async (request, response, next) => {
   let editMode = request.query.edit;
   const prodId = request.params.productId;
   if (!editMode) {
@@ -36,7 +50,8 @@ exports.getEditProduct = (request, response, next) => {
   }
 
   editMode = editMode === "true";
-  Product.findByid(prodId, (product) => {
+  try {
+    const product = await Product.findByPk(prodId);
     if (!product) {
       response.redirect("/");
     }
@@ -46,32 +61,42 @@ exports.getEditProduct = (request, response, next) => {
       editing: editMode,
       product: product,
     });
-  });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-exports.postEditProduct = (request, response, next) => {
+exports.postEditProduct = async (request, response, next) => {
   const prodId = request.body.productId.trim();
   const updatedTitle = request.body.title.trim();
   const updatedImageUrl = request.body.imageUrl.trim();
   const updatedPrice = request.body.price.trim();
   const updatedDesc = request.body.description.trim();
-
-  const updatedProduct = new Product(
-    prodId,
-    updatedTitle,
-    updatedDesc,
-    updatedImageUrl,
-    updatedPrice
-  );
-
-  updatedProduct.save();
-
-  response.redirect("/admin/products");
+  try {
+    const currentProduct = await Product.findByPk(prodId);
+    currentProduct.title = updatedTitle;
+    currentProduct.description = updatedDesc;
+    currentProduct.price = updatedPrice;
+    currentProduct, (imageUrl = updatedImageUrl);
+    const res = await currentProduct.save();
+    if (res) {
+      response.redirect("/admin/products");
+    }
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-exports.postDeleteProduct = (request, response, next) => {
+exports.postDeleteProduct = async (request, response, next) => {
   const prodId = request.body.productId;
-  Product.delete(prodId);
+  try {
+    const currentProduct = await Product.findByPk(prodId);
+    const result = await currentProduct.destroy();
 
-  response.redirect("/admin/products");
+    if (result) {
+      response.redirect("/admin/products");
+    }
+  } catch (error) {
+    console.log(error);
+  }
 };
