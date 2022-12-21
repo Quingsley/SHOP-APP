@@ -16,7 +16,7 @@ exports.postAddProduct = async (request, response, next) => {
   const price = request.body.price;
 
   try {
-    const result = await Product.create({
+    const result = await request.user.createProduct({
       title: title,
       description: description,
       price: price,
@@ -31,7 +31,7 @@ exports.postAddProduct = async (request, response, next) => {
 };
 exports.getProducts = async (request, response, next) => {
   try {
-    const products = await Product.findAll();
+    const products = await request.user.getProducts();
     response.render("admin/products", {
       prods: products,
       docTitle: "Products",
@@ -51,15 +51,15 @@ exports.getEditProduct = async (request, response, next) => {
 
   editMode = editMode === "true";
   try {
-    const product = await Product.findByPk(prodId);
-    if (!product) {
+    const products = await request.user.getProducts({ where: { id: prodId } });
+    if (!products) {
       response.redirect("/");
     }
     response.render("admin/edit-product", {
       docTitle: "Edit Product 📝",
       path: "/edit-product",
       editing: editMode,
-      product: product,
+      product: products[0],
     });
   } catch (error) {
     console.log(error);
